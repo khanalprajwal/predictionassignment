@@ -1,0 +1,82 @@
+---
+title: "Practical Machine Learning Course Project"
+author: "Prajwal Khanal"
+output: html_document
+---
+
+## Download data and remove the rows with missing values.
+
+Training Data: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+Testing Data: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+```{r}
+a=read.csv('pml-training.csv',na.strings=c('','NA'))
+b=a[,!apply(a,2,function(x) any(is.na(x)) )]
+c=b[,-c(1:7)]
+dim(c)
+```
+Install and load necessary packages.
+```{r eval= FALSE}
+install.packages('randomForest')
+install.packages('caret')
+install.packages('e1071')
+```
+
+```{r}
+library('randomForest')
+library('caret')
+library('e1071')
+```
+
+For cross validation, split our testing data into sub groups, 60:40
+```{r}
+subGrps=createDataPartition(y=c$classe, p=0.6, list=FALSE)
+subTraining=c[subGrps,]
+subTesting=c[-subGrps, ]
+dim(subTraining);dim(subTesting)
+```
+
+There are 11776 in the subTraining group, and 7846 in the subTesting group.
+Make a predictive model based on the forest paradigm.
+
+```{r}
+model=randomForest(classe~., data=subTraining, method='class')
+pred=predict(model,subTesting, type='class')
+z=confusionMatrix(pred,subTesting$classe)
+save(z,file='test.RData')
+```
+
+Load the test.RData file
+```{r}
+load('test.RData')
+z$table
+z$overall[1]
+```
+
+Based on this, the accuracy is 99.49%. The error rate on a new (subTesting) data set is going to be 0.51%, with a 95% confidence interval of 0.52% to .9%.
+
+## Final Data Set Analysis and Predictions
+
+Now process the final testing data set as before.
+```{r}
+d=read.csv('pml-testing.csv',na.strings=c('','NA'))
+e=d[,!apply(d,2,function(x) any(is.na(x)) )]
+f=e[,-c(1:7)]
+dim(f)
+```
+
+Analize the data using previous model developed
+```{r}
+predicted=predict(model,f,type='class')
+save(predicted,file='predicted.RData')
+```
+
+The final prediction for the 20 ends up as:
+```{r}
+load('predicted.RData')
+predicted
+```
+
+The Prediction is as: 
+## B  A  B  A  A  E  D  B  A  A  B  C  B  A  E  E  A  B  B  B 
+
